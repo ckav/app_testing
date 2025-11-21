@@ -197,11 +197,81 @@
 
     <main class="max-w-3xl mx-auto p-4 space-y-6">
 
-        <!-- 1. The Map (Hero) -->
+        <!-- 1. Next Stop (Micro-Goal) - MOVED TO TOP -->
+        <div class="glass-panel rounded-2xl p-6 border-l-4 border-sky-500">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Next Destination</p>
+                    <h2 id="next-stop-name" class="text-2xl font-black text-slate-800">Loading...</h2>
+                </div>
+                <div class="bg-sky-50 text-sky-600 p-2 rounded-lg">
+                    <i class="ph ph-map-pin text-xl"></i>
+                </div>
+            </div>
+            
+            <div class="flex items-end gap-2 mb-3">
+                <span id="next-stop-dist" class="text-4xl font-black text-sky-600">0</span>
+                <span class="text-lg font-bold text-slate-400 mb-1 unit-text">KM</span>
+                <span class="text-sm text-slate-400 mb-1.5 ml-1">to go</span>
+            </div>
+
+            <!-- Micro Progress Bar -->
+            <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                <div id="segment-progress" class="bg-sky-500 h-full rounded-full transition-all duration-1000" style="width: 0%"></div>
+            </div>
+            <p id="segment-text" class="text-xs text-slate-400 mt-2 text-right">0 km from previous stop</p>
+        </div>
+
+        <!-- 2. Log Activity Form - MOVED UP -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Log Today's Ride</h3>
+            <p class="text-sm text-slate-500 mb-6">Great job getting on the bike! Every km counts.</p>
+
+            <form id="log-form" class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Distance (<span class="unit-text">KM</span>)</label>
+                        <div class="relative">
+                            <input type="number" step="0.1" id="input-dist" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xl font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="0.0">
+                            <i class="ph ph-road-horizon absolute right-4 top-4 text-slate-400"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Time (Min)</label>
+                        <div class="relative">
+                            <input type="number" id="input-time" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xl font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="0">
+                            <i class="ph ph-timer absolute right-4 top-4 text-slate-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Knee Comfort Slider -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Knee Comfort Level</label>
+                        <span id="pain-val-display" class="text-xs font-bold px-2 py-0.5 rounded bg-green-100 text-green-700">Great</span>
+                    </div>
+                    <input type="range" id="input-pain" min="1" max="5" value="5" step="1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <div class="flex justify-between text-[10px] text-slate-400 mt-2">
+                        <span>Hurts</span>
+                        <span>Stiff</span>
+                        <span>Okay</span>
+                        <span>Good</span>
+                        <span>Great!</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-sky-200 transition transform active:scale-[0.98] flex justify-center items-center gap-2">
+                    <i class="ph ph-plus-circle text-xl"></i> Log Ride
+                </button>
+            </form>
+        </div>
+
+        <!-- 3. The Map -->
         <div class="glass-panel rounded-3xl p-1 overflow-hidden relative shadow-lg">
             <div class="bg-gradient-to-b from-slate-50 to-white rounded-2xl p-4">
                 <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Route Map</h2>
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Full Route Map</h2>
                     <button id="toggle-unit" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-slate-600 transition">Unit: KM</button>
                 </div>
                 
@@ -224,7 +294,6 @@
                         </defs>
 
                         <!-- The Route Path (Approximating South Island topography) -->
-                        <!-- Richmond (Top Left) -> Murchison (Mid Left) -> Lewis Pass (Mid High) -> Hanmer (Mid Right) -> CHCH (Bottom Right) -->
                         <path id="bg-path" d="M 50,50 C 50,50 100,120 150,180 C 200,240 250,300 350,250 C 450,200 500,150 600,200 C 700,250 750,350 750,350" 
                               fill="none" stroke="#e2e8f0" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
                         
@@ -258,55 +327,10 @@
             </div>
         </div>
 
-        <!-- 2. Action Panel & Health Tracker -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
-            <!-- Input Form (3 cols) -->
-            <div class="md:col-span-3 glass-panel rounded-2xl p-6">
-                <h3 class="text-lg font-bold text-slate-800 mb-1">Log Activity</h3>
-                <p class="text-sm text-slate-500 mb-6">Track your ride and how your knee felt.</p>
-
-                <form id="log-form" class="space-y-6">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Distance (<span class="unit-text">KM</span>)</label>
-                            <div class="relative">
-                                <input type="number" step="0.1" id="input-dist" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xl font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="0.0">
-                                <i class="ph ph-road-horizon absolute right-4 top-4 text-slate-400"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Time (Min)</label>
-                            <div class="relative">
-                                <input type="number" id="input-time" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xl font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="0">
-                                <i class="ph ph-timer absolute right-4 top-4 text-slate-400"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Knee Comfort Slider (The "Pro" Insight Feature) -->
-                    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                        <div class="flex justify-between mb-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase">Knee Comfort Level</label>
-                            <span id="pain-val-display" class="text-xs font-bold px-2 py-0.5 rounded bg-green-100 text-green-700">Great</span>
-                        </div>
-                        <input type="range" id="input-pain" min="1" max="5" value="5" step="1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
-                        <div class="flex justify-between text-[10px] text-slate-400 mt-2">
-                            <span>Hurts</span>
-                            <span>Stiff</span>
-                            <span>Okay</span>
-                            <span>Good</span>
-                            <span>Great!</span>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-sky-200 transition transform active:scale-[0.98] flex justify-center items-center gap-2">
-                        <i class="ph ph-plus-circle text-xl"></i> Log Ride
-                    </button>
-                </form>
-            </div>
-
-            <!-- Quick Stats (2 cols) -->
-            <div class="md:col-span-2 space-y-4">
+        <!-- 4. Stats & Trophies -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Quick Stats -->
+            <div class="space-y-4">
                 <!-- Streak Card -->
                 <div class="glass-panel rounded-2xl p-5 flex items-center justify-between">
                     <div>
@@ -331,29 +355,18 @@
                         <i class="ph ph-gauge text-2xl"></i>
                     </div>
                 </div>
+            </div>
 
-                <!-- Total Time Card -->
-                <div class="glass-panel rounded-2xl p-5 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-slate-400 uppercase font-bold">Total Time</p>
-                        <p class="text-3xl font-black text-indigo-500 mt-1"><span id="total-hours">0</span> <span class="text-sm text-slate-400 font-normal">hrs</span></p>
-                    </div>
-                    <div class="bg-indigo-100 text-indigo-500 p-3 rounded-full">
-                        <i class="ph ph-clock text-2xl"></i>
-                    </div>
+            <!-- Trophies Section -->
+            <div class="glass-panel rounded-2xl p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">🏆 Trophies</h3>
+                <div id="trophy-case" class="grid grid-cols-4 gap-2">
+                    <!-- Trophies injected via JS -->
                 </div>
             </div>
         </div>
 
-        <!-- 3. Trophies Section -->
-        <div class="glass-panel rounded-2xl p-6">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">🏆 Achievement Trophies</h3>
-            <div id="trophy-case" class="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                <!-- Trophies injected via JS -->
-            </div>
-        </div>
-
-        <!-- 4. Advanced Recovery Analysis (Chart) -->
+        <!-- 5. Advanced Recovery Analysis (Chart) -->
         <div class="glass-panel rounded-2xl p-6">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-slate-800">Recovery Analysis</h3>
@@ -369,7 +382,7 @@
             <p class="text-xs text-center text-slate-400 mt-2 italic">Track distance (bars), knee comfort (green line), and speed (purple line) to see your recovery progress.</p>
         </div>
 
-        <!-- 5. History & Data Management -->
+        <!-- 6. History & Data Management -->
         <div class="glass-panel rounded-2xl overflow-hidden">
             <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                 <h3 class="font-bold text-slate-700">Ride History</h3>
@@ -415,30 +428,43 @@
          */
         const TOTAL_KM = 425; // Richmond -> CHCH (accurate distance)
         
+        // Expanded Landmarks List for Micro-Goals
+        const LANDMARKS = [
+            { km: 0, name: "Richmond", icon: "flag" },
+            { km: 15, name: "Brightwater", icon: "house" },
+            { km: 30, name: "Wakefield", icon: "house" },
+            { km: 50, name: "Spooners Tunnel", icon: "arch" },
+            { km: 60, name: "Kohatu", icon: "tree" },
+            { km: 75, name: "Tapawera", icon: "storefront" },
+            { km: 85, name: "Kawatiri", icon: "tree" },
+            { km: 110, name: "Gowanbridge", icon: "bridge" },
+            { km: 130, name: "Murchison", icon: "coffee" },
+            { km: 145, name: "O'Sullivan's Bridge", icon: "bridge" },
+            { km: 160, name: "Maruia Falls", icon: "drop" },
+            { km: 190, name: "Springs Junction", icon: "gas-pump" },
+            { km: 215, name: "Lewis Pass", icon: "mountains" }, // High elevation
+            { km: 235, name: "Boyle Village", icon: "house" },
+            { km: 265, name: "Hanmer Turnoff", icon: "signpost" },
+            { km: 280, name: "Hanmer Springs", icon: "drop" },
+            { km: 320, name: "Culverden", icon: "storefront" },
+            { km: 335, name: "Hurunui", icon: "wine" },
+            { km: 350, name: "Waikari", icon: "train" },
+            { km: 370, name: "Amberley", icon: "farm" },
+            { km: 380, name: "Leithfield", icon: "house" },
+            { km: 400, name: "Woodend", icon: "tree" },
+            { km: 425, name: "Christchurch", icon: "trophy" }
+        ];
+
         const TROPHIES = [
             { km: 10, icon: '🥉', title: 'First 10k' },
             { km: 30, icon: '🏡', title: 'Wakefield' },
-            { km: 42, icon: '🏃‍♀️', title: 'Marathon' },
-            { km: 85, icon: '🌳', title: 'Kawatiri' },
+            { km: 50, icon: '🚇', title: 'Tunnel' },
             { km: 100, icon: '💯', title: 'Century!' },
             { km: 130, icon: '☕', title: 'Murchison' },
-            { km: 210, icon: '🏔️', title: 'Lewis Pass' },
-            { km: 275, icon: '💧', title: 'Hanmer' },
-            { km: 300, icon: '🔥', title: 'On Fire' },
-            { km: 400, icon: '🌾', title: 'Amberley' },
+            { km: 215, icon: '🏔️', title: 'Lewis Pass' },
+            { km: 280, icon: '💧', title: 'Hanmer' },
+            { km: 350, icon: '🚂', title: 'Weka Pass' },
             { km: 425, icon: '🏆', title: 'Champion!' }
-        ];
-        
-        const LANDMARKS = [
-            { km: 0, name: "Richmond", icon: "flag" },
-            { km: 30, name: "Wakefield", icon: "house" },
-            { km: 85, name: "Kawatiri", icon: "tree" },
-            { km: 130, name: "Murchison", icon: "coffee" },
-            { km: 210, name: "Lewis Pass", icon: "mountains" }, // High elevation
-            { km: 275, name: "Hanmer Springs", icon: "drop" },
-            { km: 330, name: "Culverden", icon: "storefront" },
-            { km: 400, name: "Amberley", icon: "farm" },
-            { km: 425, name: "Christchurch", icon: "trophy" }
         ];
 
         const COMFORT_LABELS = {
@@ -551,22 +577,18 @@
         }
 
         function checkLandmarkUnlock(currentKm, previousKm) {
-            // Check major landmarks for celebrations (every 50km or special points)
-            const celebrationPoints = [30, 85, 130, 210, 275, 330, 400, 425];
-            const passedPoint = celebrationPoints.find(km => km > previousKm && km <= currentKm);
+            // Check all landmarks
+            const passedPoint = LANDMARKS.find(l => l.km > previousKm && l.km <= currentKm);
             
-            if (passedPoint && !appState.passedLandmarks.includes(passedPoint)) {
-                appState.passedLandmarks.push(passedPoint);
-                const landmark = LANDMARKS.find(l => l.km === passedPoint);
+            if (passedPoint && !appState.passedLandmarks.includes(passedPoint.km)) {
+                appState.passedLandmarks.push(passedPoint.km);
                 
-                if (landmark) {
-                    setTimeout(() => {
-                        showCelebration(
-                            `🎉 ${landmark.name}!`,
-                            `You've cycled ${passedPoint} km and reached ${landmark.name}. Keep up the amazing progress!`
-                        );
-                    }, 500);
-                }
+                setTimeout(() => {
+                    showCelebration(
+                        `🎉 ${passedPoint.name}!`,
+                        `You've cycled ${passedPoint.km} km and reached ${passedPoint.name}. Keep up the amazing progress!`
+                    );
+                }, 500);
             }
         }
 
@@ -602,9 +624,12 @@
             const pct = Math.min(100, (appState.totalKm / TOTAL_KM) * 100).toFixed(0);
             document.getElementById('header-percent').textContent = pct;
 
-            // 3. Streak, Time & Speed Stats
+            // 3. Next Stop Logic
+            updateNextStop(appState.totalKm, factor);
+
+            // 4. Streak, Time & Speed Stats
             const totalMin = appState.rides.reduce((acc, r) => acc + r.minutes, 0);
-            document.getElementById('total-hours').textContent = (totalMin / 60).toFixed(1);
+            // document.getElementById('total-hours').textContent = (totalMin / 60).toFixed(1); // Removed from main view to simplify
             document.getElementById('streak-count').textContent = calculateStreak();
             
             // Calculate average speed and trend
@@ -624,17 +649,42 @@
                 trendEl.textContent = '';
             }
 
-            // 4. Map Visualization
+            // 5. Map Visualization
             updateMap(appState.totalKm);
 
-            // 5. Trophies
+            // 6. Trophies
             updateTrophies();
 
-            // 6. History Table
+            // 7. History Table
             renderHistory(factor);
 
-            // 7. Chart
+            // 8. Chart
             updateChart(factor);
+        }
+
+        function updateNextStop(currentKm, factor) {
+            const nextLandmark = LANDMARKS.find(l => l.km > currentKm);
+            const prevLandmark = [...LANDMARKS].reverse().find(l => l.km <= currentKm) || LANDMARKS[0];
+            
+            if (nextLandmark) {
+                document.getElementById('next-stop-name').textContent = nextLandmark.name;
+                
+                const distRemaining = (nextLandmark.km - currentKm) * factor;
+                document.getElementById('next-stop-dist').textContent = distRemaining.toFixed(1);
+                
+                // Segment Progress
+                const segmentTotal = nextLandmark.km - prevLandmark.km;
+                const segmentCovered = currentKm - prevLandmark.km;
+                const segmentPct = Math.min(100, Math.max(0, (segmentCovered / segmentTotal) * 100));
+                
+                document.getElementById('segment-progress').style.width = `${segmentPct}%`;
+                document.getElementById('segment-text').textContent = `${(segmentCovered * factor).toFixed(1)} ${appState.unit} since ${prevLandmark.name}`;
+            } else {
+                document.getElementById('next-stop-name').textContent = "Finished!";
+                document.getElementById('next-stop-dist').textContent = "0";
+                document.getElementById('segment-progress').style.width = "100%";
+                document.getElementById('segment-text').textContent = "You made it to Christchurch!";
+            }
         }
 
         function calculateStreak() {
@@ -769,7 +819,7 @@
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 circle.setAttribute("cx", point.x);
                 circle.setAttribute("cy", point.y);
-                circle.setAttribute("r", "5");
+                circle.setAttribute("r", "4"); // Smaller dots for more landmarks
                 circle.setAttribute("fill", "white");
                 circle.setAttribute("stroke", "#64748b");
                 circle.setAttribute("stroke-width", "2");
@@ -785,10 +835,10 @@
                 text.textContent = lm.name;
 
                 // Special Icon for Major Stops
-                if (lm.km === 0 || lm.km === TOTAL_KM || lm.name === "Lewis Pass") {
-                    circle.setAttribute("r", "7");
+                if (lm.km === 0 || lm.km === TOTAL_KM || lm.name === "Lewis Pass" || lm.name === "Murchison") {
+                    circle.setAttribute("r", "6");
                     circle.setAttribute("stroke", "#0ea5e9");
-                    text.setAttribute("class", "fill-slate-700 font-bold text-[10px] sm:text-xs"); // Always visible-ish logic could go here
+                    // text.setAttribute("class", "fill-slate-700 font-bold text-[10px] sm:text-xs"); 
                 }
 
                 group.appendChild(circle);
