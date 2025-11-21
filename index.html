@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recovery Road: Richmond to Christchurch</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Advanced Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Phosphor Icons (Clean, Pro Icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --brand-color: #0ea5e9; /* Sky 500 */
+            --success-color: #10b981; /* Emerald 500 */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .handwritten {
+            font-family: 'Patrick Hand', cursive;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--brand-color);
+            cursor: pointer;
+            margin-top: -10px; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        /* Map Animations */
+        .path-line {
+            stroke-dasharray: 1200;
+            stroke-dashoffset: 1200;
+            transition: stroke-dashoffset 1.5s ease-in-out;
+        }
+        
+        .bike-marker {
+            transition: transform 1.5s ease-in-out;
+            filter: drop-shadow(0 4px 3px rgba(0,0,0,0.15));
+        }
+
+        .landmark-point {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .landmark-point:hover {
+            r: 8;
+            stroke-width: 4;
+        }
+        
+        /* Tooltip animation */
+        .tooltip {
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .landmark-point:hover + .tooltip {
+            opacity: 1;
+        }
+
+        /* Celebration Modal */
+        .celebration-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .celebration-modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .celebration-content {
+            animation: slideUp 0.5s ease;
+        }
+
+        /* Card hover effects */
+        .card-hover {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Landmark animations */
+        .landmark-dot {
+            transition: all 0.3s ease;
+        }
+        
+        .landmark-dot.reached {
+            animation: pulse 0.5s ease-out;
+        }
+
+        @keyframes pulse {
+            0% { r: 5; }
+            50% { r: 9; }
+            100% { r: 7; }
+        }
+    </style>
+</head>
+<body class="text-slate-700 min-h-screen pb-12">
+
+    <!-- Celebration Modal -->
+    <div id="celebration-modal" class="celebration-modal">
+        <div class="celebration-content glass-panel max-w-md mx-4 p-8 rounded-3xl text-center">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 id="celebration-title" class="text-2xl font-bold text-slate-800 mb-2"></h2>
+            <p id="celebration-message" class="text-slate-600 mb-6"></p>
+            <button onclick="closeCelebration()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold">
+                Continue Journey
+            </button>
+        </div>
+    </div>
+
+    <!-- Header Area -->
+    <div class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-3xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-sky-100 p-2 rounded-lg text-sky-600">
+                    <i class="ph ph-bicycle text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800 leading-tight">Recovery Road</h1>
+                    <div class="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Richmond</span>
+                        <i class="ph ph-arrow-right"></i>
+                        <span>Christchurch</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="backupData()" class="hidden sm:block text-xs text-slate-500 hover:text-slate-800 underline" title="Save data to file">Backup</button>
+                <div class="text-right">
+                    <div class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Progress</div>
+                    <div class="text-xl font-black text-sky-600"><span id="header-percent">0</span>%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-3xl mx-auto p-4 space-y-6">
+
+        <!-- 1. The Map (Hero) -->
+        <div class="glass-panel rounded-3xl p-1 overflow-hidden relative shadow-lg">
+            <div class="bg-gradient-to-b from-slate-50 to-white rounded-2xl p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Route Map</h2>
+                    <button id="toggle-unit" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-slate-600 transition">Unit: KM</button>
+                </div>
+                
+                <div class="relative w-full aspect-[2/1] select-none">
+                    <!-- The SVG Map -->
+                    <svg id="route-map" viewBox="0 0 800 400" class="w-full h-full">
+                        <!-- Defs for gradients/shadows -->
+                        <defs>
+                            <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#cbd5e1;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#94a3b8;stop-opacity:1" />
+                            </linearGradient>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+
+                        <!-- The Route Path (Approximating South Island topography) -->
+                        <!-- Richmond (Top Left) -> Murchison (Mid Left) -> Lewis Pass (Mid High) -> Hanmer (Mid Right) -> CHCH (Bottom Right) -->
+                        <path id="bg-path" d="M 50,50 C 50,50 100,120 150,180 C 200,240 250,300 350,250 C 450,200 500,150 600,200 C 700,250 750,350 750,350" 
+                              fill="none" stroke="#e2e8f0" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+                        
+                        <!-- The Progress Path -->
+                        <path id="progress-path" class="path-line" d="M 50,50 C 50,50 100,120 150,180 C 200,240 250,300 350,250 C 450,200 500,150 600,200 C 700,250 750,350 750,350" 
+                              fill="none" stroke="#0ea5e9" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+
+                        <!-- Landmarks Group (Populated by JS) -->
+                        <g id="landmarks-container"></g>
+
+                        <!-- Bike Marker -->
+                        <g id="bike-marker" class="bike-marker">
+                            <circle r="16" fill="white" stroke="#0ea5e9" stroke-width="4" />
+                            <text x="0" y="5" text-anchor="middle" font-size="18" transform="scale(-1, 1)">🚴‍♀️</text>
+                            <!-- Tooltip for bike -->
+                            <rect x="-40" y="-45" width="80" height="24" rx="4" fill="#1e293b" opacity="0.8" />
+                            <text id="bike-tooltip-dist" x="0" y="-28" text-anchor="middle" fill="white" font-size="12" font-weight="bold">0 km</text>
+                        </g>
+                    </svg>
+                </div>
+                <div class="mt-4 flex justify-between items-end">
+                    <div>
+                        <p class="text-xs text-slate-400">Current Location</p>
+                        <p id="location-status" class="text-lg font-semibold text-slate-700">Start Line: Richmond</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-400">Total Distance</p>
+                        <p class="text-2xl font-bold text-slate-800"><span id="display-total-km">0</span> <span class="text-sm font-normal text-slate-500 unit-text">km</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Action Panel & Health Tracker -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <!-- Input Form (3 cols) -->
+            <div class="md:col-span-3 glass-panel rounded-2xl p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-1">Log Activity</h3>
+                <p class="text-sm text-slate-500 mb-6">Track your ride and how your knee felt.</p>
+
+                <form id="log-form" class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Distance (<span class="unit-text">KM</span>)</label>
+                            <div class="relative">
+                                <input type="number" step="0.1" id="input-dist" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xl font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="0.0">
+                                <i class="ph ph-road-horizon absolute right-4 top-4 text-slate-400"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Time (Min)</label>
+                            <div class="relative">
+                                <input type="number" id="input-time" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xl font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="0">
+                                <i class="ph ph-timer absolute right-4 top-4 text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Knee Comfort Slider (The "Pro" Insight Feature) -->
+                    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase">Knee Comfort Level</label>
+                            <span id="pain-val-display" class="text-xs font-bold px-2 py-0.5 rounded bg-green-100 text-green-700">Great</span>
+                        </div>
+                        <input type="range" id="input-pain" min="1" max="5" value="5" step="1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="flex justify-between text-[10px] text-slate-400 mt-2">
+                            <span>Hurts</span>
+                            <span>Stiff</span>
+                            <span>Okay</span>
+                            <span>Good</span>
+                            <span>Great!</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-sky-200 transition transform active:scale-[0.98] flex justify-center items-center gap-2">
+                        <i class="ph ph-plus-circle text-xl"></i> Log Ride
+                    </button>
+                </form>
+            </div>
+
+            <!-- Quick Stats (2 cols) -->
+            <div class="md:col-span-2 space-y-4">
+                <!-- Streak Card -->
+                <div class="glass-panel rounded-2xl p-5 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase font-bold">Current Streak</p>
+                        <p class="text-3xl font-black text-orange-500 mt-1"><span id="streak-count">0</span> <span class="text-sm text-slate-400 font-normal">days</span></p>
+                    </div>
+                    <div class="bg-orange-100 text-orange-500 p-3 rounded-full">
+                        <i class="ph ph-fire text-2xl"></i>
+                    </div>
+                </div>
+
+                <!-- Average Speed Card -->
+                <div class="glass-panel rounded-2xl p-5 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase font-bold">Avg Speed</p>
+                        <div class="flex items-baseline gap-2">
+                            <p class="text-3xl font-black text-emerald-600 mt-1"><span id="avg-speed">0</span> <span class="text-sm text-emerald-400 unit-label">km/h</span></p>
+                            <span id="speed-trend" class="text-xs font-bold"></span>
+                        </div>
+                    </div>
+                    <div class="bg-emerald-100 text-emerald-600 p-3 rounded-full">
+                        <i class="ph ph-gauge text-2xl"></i>
+                    </div>
+                </div>
+
+                <!-- Total Time Card -->
+                <div class="glass-panel rounded-2xl p-5 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase font-bold">Total Time</p>
+                        <p class="text-3xl font-black text-indigo-500 mt-1"><span id="total-hours">0</span> <span class="text-sm text-slate-400 font-normal">hrs</span></p>
+                    </div>
+                    <div class="bg-indigo-100 text-indigo-500 p-3 rounded-full">
+                        <i class="ph ph-clock text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Trophies Section -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">🏆 Achievement Trophies</h3>
+            <div id="trophy-case" class="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                <!-- Trophies injected via JS -->
+            </div>
+        </div>
+
+        <!-- 4. Advanced Recovery Analysis (Chart) -->
+        <div class="glass-panel rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Recovery Analysis</h3>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="w-3 h-3 rounded-full bg-sky-500"></span> <span class="text-xs text-slate-500">Distance</span>
+                    <span class="w-3 h-3 rounded-full bg-emerald-500 ml-2"></span> <span class="text-xs text-slate-500">Comfort</span>
+                    <span class="w-3 h-3 rounded-full bg-purple-500 ml-2"></span> <span class="text-xs text-slate-500">Speed</span>
+                </div>
+            </div>
+            <div class="h-64 w-full">
+                <canvas id="recoveryChart"></canvas>
+            </div>
+            <p class="text-xs text-center text-slate-400 mt-2 italic">Track distance (bars), knee comfort (green line), and speed (purple line) to see your recovery progress.</p>
+        </div>
+
+        <!-- 5. History & Data Management -->
+        <div class="glass-panel rounded-2xl overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="font-bold text-slate-700">Ride History</h3>
+                <div class="flex gap-3">
+                    <label class="text-xs text-sky-600 hover:underline cursor-pointer">
+                        <input type="file" id="restore-input" class="hidden" accept=".json">
+                        Import
+                    </label>
+                    <button onclick="exportData()" class="text-xs text-sky-600 hover:underline">Export</button>
+                    <button onclick="resetApp()" class="text-xs text-red-400 hover:text-red-600">Reset</button>
+                </div>
+            </div>
+            <div class="max-h-80 overflow-y-auto p-0">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50 sticky top-0 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-6 py-3">Date</th>
+                            <th class="px-6 py-3">Ride</th>
+                            <th class="px-6 py-3">Speed</th>
+                            <th class="px-6 py-3 text-right">Feeling</th>
+                            <th class="px-6 py-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table" class="divide-y divide-slate-100 text-sm">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="empty-state" class="p-8 text-center text-slate-400 hidden">
+                <i class="ph ph-bicycle text-4xl mb-2 opacity-50"></i>
+                <p>No rides logged yet.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="text-center p-8 text-slate-400 text-sm">
+        <p class="handwritten text-lg">Keep spinning! Recovery is a journey, not a race. ❤️</p>
+    </footer>
+
+    <script>
+        /** * --- CONFIGURATION ---
+         */
+        const TOTAL_KM = 425; // Richmond -> CHCH (accurate distance)
+        
+        const TROPHIES = [
+            { km: 10, icon: '🥉', title: 'First 10k' },
+            { km: 30, icon: '🏡', title: 'Wakefield' },
+            { km: 42, icon: '🏃‍♀️', title: 'Marathon' },
+            { km: 85, icon: '🌳', title: 'Kawatiri' },
+            { km: 100, icon: '💯', title: 'Century!' },
+            { km: 130, icon: '☕', title: 'Murchison' },
+            { km: 210, icon: '🏔️', title: 'Lewis Pass' },
+            { km: 275, icon: '💧', title: 'Hanmer' },
+            { km: 300, icon: '🔥', title: 'On Fire' },
+            { km: 400, icon: '🌾', title: 'Amberley' },
+            { km: 425, icon: '🏆', title: 'Champion!' }
+        ];
+        
+        const LANDMARKS = [
+            { km: 0, name: "Richmond", icon: "flag" },
+            { km: 30, name: "Wakefield", icon: "house" },
+            { km: 85, name: "Kawatiri", icon: "tree" },
+            { km: 130, name: "Murchison", icon: "coffee" },
+            { km: 210, name: "Lewis Pass", icon: "mountains" }, // High elevation
+            { km: 275, name: "Hanmer Springs", icon: "drop" },
+            { km: 330, name: "Culverden", icon: "storefront" },
+            { km: 400, name: "Amberley", icon: "farm" },
+            { km: 425, name: "Christchurch", icon: "trophy" }
+        ];
+
+        const COMFORT_LABELS = {
+            1: { label: "Painful", color: "text-red-500", bg: "bg-red-100" },
+            2: { label: "Stiff", color: "text-orange-500", bg: "bg-orange-100" },
+            3: { label: "Okay", color: "text-yellow-600", bg: "bg-yellow-100" },
+            4: { label: "Good", color: "text-blue-500", bg: "bg-blue-100" },
+            5: { label: "Great", color: "text-emerald-600", bg: "bg-emerald-100" }
+        };
+
+        let appState = {
+            unit: 'km',
+            rides: [],
+            totalKm: 0,
+            passedLandmarks: []
+        };
+
+        let chartInstance = null;
+
+        /** * --- INITIALIZATION ---
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            initMap();
+            initChart();
+            renderUI();
+
+            // Event Listeners
+            document.getElementById('log-form').addEventListener('submit', addRide);
+            document.getElementById('toggle-unit').addEventListener('click', toggleUnit);
+            document.getElementById('restore-input').addEventListener('change', restoreData);
+            
+            // Live slider feedback
+            document.getElementById('input-pain').addEventListener('input', (e) => {
+                const val = e.target.value;
+                const display = document.getElementById('pain-val-display');
+                const config = COMFORT_LABELS[val];
+                display.textContent = config.label;
+                display.className = `text-xs font-bold px-2 py-0.5 rounded ${config.color} ${config.bg}`;
+            });
+        });
+
+        /** * --- CORE LOGIC ---
+         */
+        function loadData() {
+            const stored = localStorage.getItem('recovery_road_pro_v1');
+            if (stored) {
+                appState = JSON.parse(stored);
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('recovery_road_pro_v1', JSON.stringify(appState));
+        }
+
+        function toggleUnit() {
+            appState.unit = appState.unit === 'km' ? 'mi' : 'km';
+            saveData();
+            renderUI();
+        }
+
+        function addRide(e) {
+            e.preventDefault();
+            const distInput = parseFloat(document.getElementById('input-dist').value);
+            const timeInput = parseInt(document.getElementById('input-time').value);
+            const painInput = parseInt(document.getElementById('input-pain').value);
+
+            if (!distInput || !timeInput) return;
+
+            // Convert to KM for storage if unit is MI
+            const distKm = appState.unit === 'mi' ? distInput * 1.60934 : distInput;
+
+            const ride = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                km: distKm,
+                minutes: timeInput,
+                comfort: painInput
+            };
+
+            const oldTotal = appState.totalKm;
+            
+            appState.rides.push(ride);
+            appState.totalKm += distKm;
+
+            // Check for landmark celebrations
+            checkLandmarkUnlock(appState.totalKm, oldTotal);
+
+            // Animation & Feedback
+            confetti({ particleCount: 150, spread: 60, origin: { y: 0.7 } });
+            
+            saveData();
+            renderUI();
+            e.target.reset();
+            
+            // Reset slider UI
+            document.getElementById('pain-val-display').textContent = "Great";
+            document.getElementById('pain-val-display').className = "text-xs font-bold px-2 py-0.5 rounded text-emerald-600 bg-emerald-100";
+        }
+
+        function deleteRide(id) {
+            if(!confirm("Remove this entry?")) return;
+            const ride = appState.rides.find(r => r.id === id);
+            if (ride) {
+                appState.totalKm -= ride.km;
+                appState.rides = appState.rides.filter(r => r.id !== id);
+                saveData();
+                renderUI();
+            }
+        }
+
+        function checkLandmarkUnlock(currentKm, previousKm) {
+            // Check major landmarks for celebrations (every 50km or special points)
+            const celebrationPoints = [30, 85, 130, 210, 275, 330, 400, 425];
+            const passedPoint = celebrationPoints.find(km => km > previousKm && km <= currentKm);
+            
+            if (passedPoint && !appState.passedLandmarks.includes(passedPoint)) {
+                appState.passedLandmarks.push(passedPoint);
+                const landmark = LANDMARKS.find(l => l.km === passedPoint);
+                
+                if (landmark) {
+                    setTimeout(() => {
+                        showCelebration(
+                            `🎉 ${landmark.name}!`,
+                            `You've cycled ${passedPoint} km and reached ${landmark.name}. Keep up the amazing progress!`
+                        );
+                    }, 500);
+                }
+            }
+        }
+
+        function showCelebration(title, message) {
+            document.getElementById('celebration-title').textContent = title;
+            document.getElementById('celebration-message').textContent = message;
+            document.getElementById('celebration-modal').classList.add('active');
+            
+            // Extra confetti
+            confetti({
+                particleCount: 150,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+        }
+
+        function closeCelebration() {
+            document.getElementById('celebration-modal').classList.remove('active');
+        }
+
+        /** * --- UI RENDERING ---
+         */
+        function renderUI() {
+            // 1. Unit Labels
+            const factor = appState.unit === 'km' ? 1 : 0.621371;
+            document.querySelectorAll('.unit-text').forEach(el => el.textContent = appState.unit.toUpperCase());
+            document.getElementById('toggle-unit').textContent = `Unit: ${appState.unit.toUpperCase()}`;
+
+            // 2. Header Stats
+            const displayTotal = (appState.totalKm * factor).toFixed(1);
+            document.getElementById('display-total-km').textContent = displayTotal;
+            
+            const pct = Math.min(100, (appState.totalKm / TOTAL_KM) * 100).toFixed(0);
+            document.getElementById('header-percent').textContent = pct;
+
+            // 3. Streak, Time & Speed Stats
+            const totalMin = appState.rides.reduce((acc, r) => acc + r.minutes, 0);
+            document.getElementById('total-hours').textContent = (totalMin / 60).toFixed(1);
+            document.getElementById('streak-count').textContent = calculateStreak();
+            
+            // Calculate average speed and trend
+            const speedStats = calculateSpeedStats();
+            document.getElementById('avg-speed').textContent = speedStats.avgSpeed.toFixed(1);
+            
+            const trendEl = document.getElementById('speed-trend');
+            if (speedStats.trend > 0) {
+                trendEl.textContent = `↗ +${speedStats.trend.toFixed(1)}%`;
+                trendEl.className = 'text-xs font-bold text-emerald-600';
+                trendEl.title = 'Speed improving!';
+            } else if (speedStats.trend < 0) {
+                trendEl.textContent = `↘ ${speedStats.trend.toFixed(1)}%`;
+                trendEl.className = 'text-xs font-bold text-orange-500';
+                trendEl.title = 'Take it easy, recovery takes time';
+            } else {
+                trendEl.textContent = '';
+            }
+
+            // 4. Map Visualization
+            updateMap(appState.totalKm);
+
+            // 5. Trophies
+            updateTrophies();
+
+            // 6. History Table
+            renderHistory(factor);
+
+            // 7. Chart
+            updateChart(factor);
+        }
+
+        function calculateStreak() {
+            if (appState.rides.length === 0) return 0;
+            
+            // Get unique ride dates sorted descending
+            const uniqueDates = [...new Set(appState.rides.map(r => 
+                new Date(r.date).toDateString()
+            ))].sort((a, b) => new Date(b) - new Date(a));
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            // Check if most recent ride was today or yesterday
+            const lastRide = new Date(uniqueDates[0]);
+            lastRide.setHours(0, 0, 0, 0);
+            
+            if (lastRide < yesterday) return 0; // Streak broken
+            
+            // Count consecutive days
+            let streak = 0;
+            let checkDate = new Date(today);
+            
+            for (let dateStr of uniqueDates) {
+                const rideDate = new Date(dateStr);
+                rideDate.setHours(0, 0, 0, 0);
+                
+                if (rideDate.getTime() === checkDate.getTime()) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else if (rideDate < checkDate) {
+                    break;
+                }
+            }
+            
+            return streak;
+        }
+
+        function calculateSpeedStats() {
+            if (appState.rides.length === 0) {
+                return { avgSpeed: 0, trend: 0 };
+            }
+
+            const factor = appState.unit === 'km' ? 1 : 0.621371;
+            
+            // Calculate overall average speed
+            const totalKm = appState.rides.reduce((sum, r) => sum + r.km, 0);
+            const totalHours = appState.rides.reduce((sum, r) => sum + r.minutes / 60, 0);
+            const avgSpeed = totalHours > 0 ? (totalKm / totalHours) * factor : 0;
+            
+            // Calculate trend: compare last 3 rides vs previous 3 rides
+            let trend = 0;
+            if (appState.rides.length >= 6) {
+                const sorted = [...appState.rides].sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                const last3 = sorted.slice(-3);
+                const prev3 = sorted.slice(-6, -3);
+                
+                const last3Speed = last3.reduce((sum, r) => sum + (r.km / (r.minutes / 60)), 0) / 3;
+                const prev3Speed = prev3.reduce((sum, r) => sum + (r.km / (r.minutes / 60)), 0) / 3;
+                
+                if (prev3Speed > 0) {
+                    trend = ((last3Speed - prev3Speed) / prev3Speed) * 100;
+                }
+            }
+            
+            return { avgSpeed, trend };
+        }
+
+        function renderHistory(factor) {
+            const tbody = document.getElementById('history-table');
+            tbody.innerHTML = '';
+            
+            const sorted = [...appState.rides].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (sorted.length === 0) {
+                document.getElementById('empty-state').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('empty-state').classList.add('hidden');
+
+            sorted.forEach(ride => {
+                const date = new Date(ride.date).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' });
+                const dist = (ride.km * factor).toFixed(1);
+                const speed = ((ride.km / (ride.minutes / 60)) * factor).toFixed(1);
+                const comfort = COMFORT_LABELS[ride.comfort];
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition group";
+                tr.innerHTML = `
+                    <td class="px-6 py-3 text-slate-600">${date}</td>
+                    <td class="px-6 py-3">
+                        <div class="font-bold text-slate-800">${dist} <span class="text-xs font-normal text-slate-400">${appState.unit}</span></div>
+                        <div class="text-xs text-slate-400">${ride.minutes} min</div>
+                    </td>
+                    <td class="px-6 py-3">
+                        <div class="font-semibold text-purple-600">${speed}</div>
+                        <div class="text-xs text-slate-400">${appState.unit}/h</div>
+                    </td>
+                    <td class="px-6 py-3 text-right">
+                        <span class="inline-block text-xs font-bold px-2 py-1 rounded-full ${comfort.color} ${comfort.bg}">
+                            ${comfort.label}
+                        </span>
+                    </td>
+                    <td class="px-6 py-3 text-right">
+                        <button onclick="deleteRide(${ride.id})" class="text-slate-300 hover:text-red-500 transition">
+                            <i class="ph ph-trash text-lg"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        /** * --- MAP LOGIC ---
+         */
+        function initMap() {
+            const container = document.getElementById('landmarks-container');
+            const bgPath = document.getElementById('bg-path');
+            const pathLen = bgPath.getTotalLength();
+
+            LANDMARKS.forEach(lm => {
+                const pct = lm.km / TOTAL_KM;
+                const point = bgPath.getPointAtLength(pct * pathLen);
+                
+                const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                
+                // Circle Dot
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", point.x);
+                circle.setAttribute("cy", point.y);
+                circle.setAttribute("r", "5");
+                circle.setAttribute("fill", "white");
+                circle.setAttribute("stroke", "#64748b");
+                circle.setAttribute("stroke-width", "2");
+                circle.setAttribute("class", "landmark-point");
+                circle.setAttribute("data-km", lm.km);
+                
+                // Label (Invisible tooltip styled text)
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", point.x);
+                text.setAttribute("y", point.y - 15);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("class", "tooltip fill-slate-600 font-bold text-xs");
+                text.textContent = lm.name;
+
+                // Special Icon for Major Stops
+                if (lm.km === 0 || lm.km === TOTAL_KM || lm.name === "Lewis Pass") {
+                    circle.setAttribute("r", "7");
+                    circle.setAttribute("stroke", "#0ea5e9");
+                    text.setAttribute("class", "fill-slate-700 font-bold text-[10px] sm:text-xs"); // Always visible-ish logic could go here
+                }
+
+                group.appendChild(circle);
+                group.appendChild(text);
+                container.appendChild(group);
+            });
+        }
+
+        function updateMap(currentKm) {
+            const bgPath = document.getElementById('bg-path');
+            const progressPath = document.getElementById('progress-path');
+            const bikeMarker = document.getElementById('bike-marker');
+            const statusText = document.getElementById('location-status');
+            const tooltipDist = document.getElementById('bike-tooltip-dist');
+
+            const pathLen = bgPath.getTotalLength();
+            const pct = Math.min(1, currentKm / TOTAL_KM);
+            
+            // Draw Progress Line
+            const drawLen = pathLen * pct;
+            progressPath.style.strokeDasharray = pathLen;
+            progressPath.style.strokeDashoffset = pathLen - drawLen;
+
+            // Move Bike
+            const point = bgPath.getPointAtLength(drawLen);
+            bikeMarker.setAttribute("transform", `translate(${point.x}, ${point.y})`);
+
+            // Update Bike Tooltip
+            const factor = appState.unit === 'km' ? 1 : 0.621371;
+            tooltipDist.textContent = `${(currentKm * factor).toFixed(0)} ${appState.unit}`;
+
+            // Determine Location Context
+            let passedLandmarks = LANDMARKS.filter(l => l.km <= currentKm);
+            let nextLandmark = LANDMARKS.find(l => l.km > currentKm);
+            let currentPlace = passedLandmarks.length > 0 ? passedLandmarks[passedLandmarks.length - 1] : LANDMARKS[0];
+
+            if (pct >= 1) {
+                statusText.innerHTML = `<span class="text-emerald-600">Arrived in Christchurch! 🎉</span>`;
+            } else if (nextLandmark) {
+                let distToNext = ((nextLandmark.km - currentKm) * factor).toFixed(0);
+                statusText.innerHTML = `Passed <span class="font-bold text-slate-800">${currentPlace.name}</span>. <span class="font-bold text-sky-600">${distToNext} ${appState.unit}</span> to ${nextLandmark.name}.`;
+            }
+
+            // Highlight reached dots
+            document.querySelectorAll('.landmark-point').forEach(dot => {
+                const dotKm = parseFloat(dot.getAttribute('data-km'));
+                if (currentKm >= dotKm) {
+                    dot.setAttribute('fill', '#10b981'); // Emerald for progress
+                    dot.setAttribute('stroke', '#065f46');
+                    dot.classList.add('reached');
+                } else {
+                    dot.setAttribute('fill', 'white');
+                    dot.setAttribute('stroke', '#64748b');
+                    dot.classList.remove('reached');
+                }
+            });
+        }
+
+        /** * --- CHART LOGIC ---
+         */
+        function initChart() {
+            const ctx = document.getElementById('recoveryChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Knee Comfort (1-5)',
+                            data: [],
+                            borderColor: '#10b981', // Emerald
+                            borderWidth: 2,
+                            tension: 0.4,
+                            yAxisID: 'y1',
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#10b981',
+                            pointRadius: 4
+                        },
+                        {
+                            type: 'line',
+                            label: 'Speed (km/h)',
+                            data: [],
+                            borderColor: '#a855f7', // Purple
+                            borderWidth: 2,
+                            tension: 0.4,
+                            yAxisID: 'y2',
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#a855f7',
+                            pointRadius: 3,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Distance',
+                            data: [],
+                            backgroundColor: 'rgba(14, 165, 233, 0.6)', // Sky 500
+                            borderRadius: 4,
+                            yAxisID: 'y',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { display: false, beginAtZero: true }, // Distance Axis (Hidden)
+                        y1: { 
+                            display: true, 
+                            position: 'right', 
+                            min: 1, 
+                            max: 5,
+                            ticks: { stepSize: 1, font: {size: 9}, color: '#cbd5e1' },
+                            grid: { borderDash: [4, 4], color: '#f1f5f9' },
+                            title: { display: true, text: 'Comfort', font: {size: 9}, color: '#94a3b8' }
+                        },
+                        y2: {
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: { font: {size: 9}, color: '#cbd5e1' },
+                            grid: { display: false },
+                            title: { display: true, text: 'Speed', font: {size: 9}, color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(factor) {
+            if (!chartInstance) return;
+            
+            // Get last 10 rides (reversed to show chronological L->R)
+            const dataSlice = [...appState.rides].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10).reverse();
+            
+            const labels = dataSlice.map(r => new Date(r.date).toLocaleDateString(undefined, {day: 'numeric', month: 'short'}));
+            const distances = dataSlice.map(r => (r.km * factor).toFixed(1));
+            const comforts = dataSlice.map(r => r.comfort);
+            const speeds = dataSlice.map(r => ((r.km / (r.minutes / 60)) * factor).toFixed(1));
+
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].data = comforts; // Comfort Line (green)
+            chartInstance.data.datasets[1].data = speeds; // Speed Line (purple)
+            chartInstance.data.datasets[2].data = distances; // Distance Bars (blue)
+            chartInstance.update();
+        }
+
+        function updateTrophies() {
+            const container = document.getElementById('trophy-case');
+            container.innerHTML = '';
+
+            TROPHIES.forEach(t => {
+                const unlocked = appState.totalKm >= t.km;
+                const div = document.createElement('div');
+                div.className = `flex flex-col items-center justify-center p-3 rounded-lg border ${
+                    unlocked 
+                        ? 'bg-yellow-50 border-yellow-200 shadow-sm' 
+                        : 'bg-slate-50 border-slate-100 opacity-50 grayscale'
+                }`;
+                div.innerHTML = `
+                    <span class="text-3xl mb-1">${t.icon}</span>
+                    <span class="text-[10px] font-bold text-center leading-tight text-slate-600">${t.title}</span>
+                `;
+                if (!unlocked) {
+                    div.title = `Unlock at ${t.km} km`;
+                }
+                container.appendChild(div);
+            });
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState));
+            const link = document.createElement('a');
+            link.setAttribute("href", dataStr);
+            link.setAttribute("download", `recovery_road_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        function backupData() {
+            exportData();
+        }
+
+        function restoreData(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    try {
+                        const contents = JSON.parse(evt.target.result);
+                        if(contents.rides && contents.totalKm !== undefined) {
+                            if(confirm("This will replace your current data. Continue?")) {
+                                appState = contents;
+                                saveData();
+                                renderUI();
+                                alert("Data restored successfully!");
+                            }
+                        } else {
+                            alert("Invalid file format.");
+                        }
+                    } catch(err) {
+                        alert("Error reading file: " + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function resetApp() {
+            if(confirm("Are you sure? This will delete all ride history.")) {
+                localStorage.removeItem('recovery_road_pro_v1');
+                location.reload();
+            }
+        }
+
+    </script>
+</body>
+</html>
